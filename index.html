@@ -3311,11 +3311,25 @@ function ovApplyHide(){ // 숨김 상태면 클래스·display 말고도 visibil
     st.removeProperty('visibility');st.removeProperty('opacity');st.removeProperty('pointer-events');overlay.removeAttribute('aria-hidden');void overlay.offsetHeight;
   }
 }
-function overlayShown(){ // 클래스 값이 아니라 실제로 화면에 보이는지로 판단해요
-  ovApplyHide();
-  try{var cs=getComputedStyle(overlay);return cs.display!=='none'&&cs.visibility!=='hidden'&&cs.opacity!=='0';}catch(e){return !ovFlagHidden();}
+function forceHideStartOverlay(){
+  overlay.classList.add('hidden');
+  overlay.style.setProperty('display','none','important');
+  overlay.style.setProperty('visibility','hidden','important');
+  overlay.style.setProperty('opacity','0','important');
+  overlay.style.setProperty('pointer-events','none','important');
+  overlay.setAttribute('aria-hidden','true');
+  document.body.classList.remove('menu');
 }
-function syncMenu(){var vis=overlayShown();if(document.body.classList.contains('menu')!==vis)document.body.classList.toggle('menu',vis);}
+function overlayShown(){ // 인앱 브라우저에서 모바일 시작 메뉴가 다시 나타나는 현상을 막아요
+  if((dev==='mobile'||mobile)&&locked){forceHideStartOverlay();return false;}
+  ovApplyHide();
+  try{var cs=getComputedStyle(overlay);return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity)!==0;}catch(e){return !ovFlagHidden();}
+}
+function syncMenu(){
+  if((dev==='mobile'||mobile)&&locked){forceHideStartOverlay();return;}
+  var vis=overlayShown();
+  if(document.body.classList.contains('menu')!==vis)document.body.classList.toggle('menu',vis);
+}
 try{new MutationObserver(syncMenu).observe(overlay,{attributes:true,attributeFilter:['class','style']});}catch(e){}
 setInterval(syncMenu,100);addEventListener('pageshow',syncMenu);addEventListener('resize',syncMenu);addEventListener('orientationchange',syncMenu);addEventListener('touchend',function(){setTimeout(syncMenu,0);setTimeout(syncMenu,120);},true);document.addEventListener('visibilitychange',syncMenu);syncMenu(); // 앱 안 브라우저에서 이벤트가 빠져도 화면 상태가 맞도록 주기적으로도 확인해요
 
@@ -3325,9 +3339,9 @@ var tc=document.getElementById('tc'),joyEl=document.getElementById('joy'),jk=doc
 function startPC(){dev='pc';mobile=false;document.body.classList.remove('mob');try{audio();}catch(e){}try{renderer.domElement.requestPointerLock();}catch(e){}}
 function startMobile(){
   dev='mobile';mobile=true;document.body.classList.add('mob');document.body.classList.toggle('cbk',devKind==='chromebook');try{audio();}catch(e){}locked=true;
-  // 인앱 브라우저가 hidden 클래스를 덮어써도 시작 오버레이가 게임 위에 남지 않도록 직접 숨깁니다.
-  overlay.classList.add('hidden');overlay.style.setProperty('display','none','important');
-  tc.style.display='block';if(window.applyTouchLayout)window.applyTouchLayout();
+  // 카카오톡 등 인앱 브라우저에서도 시작 메뉴가 터치 화면을 덮지 않도록 강제로 숨겨요.
+  forceHideStartOverlay();
+  tc.style.display='block';tc.style.pointerEvents='auto';if(window.applyTouchLayout)window.applyTouchLayout();
   var de=document.documentElement,lk=function(){try{if(screen.orientation&&screen.orientation.lock)return screen.orientation.lock('landscape').catch(function(){});}catch(e){}};
   if(devKind!=='chromebook')try{var rf=de.requestFullscreen||de.webkitRequestFullscreen,pr=rf?rf.call(de):null;if(pr&&pr.then)pr.then(lk,lk);else lk();}catch(e){lk();} // 크롬북은 전체 화면·가로 고정을 요청하지 않아요
   setTimeout(fit,200);setTimeout(fit,700);
@@ -3353,27 +3367,53 @@ function joyMove(t){
   var jsc=(SET.bs||1)*((((SET.pos||{}).joy)||{}).s||1);jk.style.transform='translate('+dx/jsc+'px,'+dy/jsc+'px)';
   var nx=dx/mx,ny=dy/mx;jv.x=Math.abs(nx)<.15?0:nx;jv.y=Math.abs(ny)<.15?0:ny;
 }
-tc.addEventListener('touchstart',function(e){if(cmdOpen){closeCmd();e.preventDefault();return;}e.preventDefault();[].forEach.call(e.changedTouches,function(t){
-  var b=t.target.closest('[data-k]');
-  if(b){btnT[t.identifier]=b.dataset.k;tbtn(b.dataset.k,true);}
-  else if(t.target.closest('#joy')){joyId=t.identifier;joyMove(t);}
-  else if(lookId===null){lookId=t.identifier;lx=t.clientX;ly=t.clientY;}
-});},{passive:false});
-tc.addEventListener('touchmove',function(e){e.preventDefault();[].forEach.call(e.changedTouches,function(t){
-  if(t.identifier===joyId)joyMove(t);
-  else if(t.identifier===lookId){if(shopOpen){lx=t.clientX;ly=t.clientY;return;}var ss=.0048*SET.touch*camera.fov/75;P.yaw-=(t.clientX-lx)*ss;P.pitch-=(t.clientY-ly)*ss;P.pitch=Math.max(-1.45,Math.min(1.45,P.pitch));lx=t.clientX;ly=t.clientY;}
-});},{passive:false});
-function tend(e){[].forEach.call(e.changedTouches,function(t){
-  if(t.identifier===joyId){joyId=null;jv.x=jv.y=0;jk.style.transform='';}
-  else if(t.identifier===lookId)lookId=null;
-  else if(btnT[t.identifier]){tbtn(btnT[t.identifier],false);delete btnT[t.identifier];}
-});}
-tc.addEventListener('touchend',tend);tc.addEventListener('touchcancel',tend);
+// Pointer Events는 카카오톡 인앱 브라우저와 크롬북 터치스크린 입력을 안정적으로 처리해요.
+var activePointers=Object.create(null);
+function pointerDown(e){
+  if(e.pointerType==='mouse')return;
+  if(cmdOpen){closeCmd();e.preventDefault();return;}
+  e.preventDefault();
+  try{tc.setPointerCapture(e.pointerId);}catch(err){}
+  var b=e.target.closest('[data-k]');
+  if(b){activePointers[e.pointerId]={kind:'button',key:b.dataset.k};tbtn(b.dataset.k,true);}
+  else if(e.target.closest('#joy')){activePointers[e.pointerId]={kind:'joy'};joyId=e.pointerId;joyMove(e);}
+  else if(lookId===null){activePointers[e.pointerId]={kind:'look'};lookId=e.pointerId;lx=e.clientX;ly=e.clientY;}
+}
+function pointerMove(e){
+  var a=activePointers[e.pointerId];if(!a)return;
+  e.preventDefault();
+  if(a.kind==='joy')joyMove(e);
+  else if(a.kind==='look'){
+    if(shopOpen){lx=e.clientX;ly=e.clientY;return;}
+    var ss=.0048*SET.touch*camera.fov/75;
+    P.yaw-=(e.clientX-lx)*ss;P.pitch-=(e.clientY-ly)*ss;
+    P.pitch=Math.max(-1.45,Math.min(1.45,P.pitch));lx=e.clientX;ly=e.clientY;
+  }
+}
+function pointerEnd(e){
+  var a=activePointers[e.pointerId];if(!a)return;
+  if(a.kind==='joy'&&joyId===e.pointerId){joyId=null;jv.x=jv.y=0;jk.style.transform='';}
+  else if(a.kind==='look'&&lookId===e.pointerId)lookId=null;
+  else if(a.kind==='button')tbtn(a.key,false);
+  delete activePointers[e.pointerId];
+}
+if(window.PointerEvent){
+  tc.addEventListener('pointerdown',pointerDown,{passive:false});
+  tc.addEventListener('pointermove',pointerMove,{passive:false});
+  tc.addEventListener('pointerup',pointerEnd);
+  tc.addEventListener('pointercancel',pointerEnd);
+  tc.addEventListener('lostpointercapture',pointerEnd);
+}else{
+  tc.addEventListener('touchstart',function(e){[].forEach.call(e.changedTouches,function(t){pointerDown({pointerType:'touch',pointerId:t.identifier,target:t.target,clientX:t.clientX,clientY:t.clientY,preventDefault:function(){e.preventDefault();}});});},{passive:false});
+  tc.addEventListener('touchmove',function(e){[].forEach.call(e.changedTouches,function(t){pointerMove({pointerId:t.identifier,clientX:t.clientX,clientY:t.clientY,preventDefault:function(){e.preventDefault();}});});},{passive:false});
+  function oldTouchEnd(e){[].forEach.call(e.changedTouches,function(t){pointerEnd({pointerId:t.identifier});});}
+  tc.addEventListener('touchend',oldTouchEnd);tc.addEventListener('touchcancel',oldTouchEnd);
+}
 var snick=document.getElementById('snick'),snickmsg=document.getElementById('snickmsg'),playerNick='';
 snick.value=''; // 처음 들어갈 때는 항상 빈 칸 (공용 기기에서 이전 사람의 닉네임이 채워지지 않게)
-function nickReady(){ // 닉네임을 정하지 않으면 게임을 시작할 수 없어요
+function nickReady(){ // 닉네임을 비워 둔 경우에도 기본 닉네임으로 바로 시작할 수 있어요
   var nm=Array.from((snick.value||'').replace(/\s+/g,' ').trim()).slice(0,12).join('');
-  if(!nm){snickmsg.textContent='닉네임을 입력해야 게임을 시작할 수 있어요.';try{snick.focus();}catch(e){}return false;}
+  if(!nm)nm='생존자';
   var pb=nickProblem(nm);if(pb){snickmsg.textContent=pb;try{snick.focus();}catch(e){}return false;}
   playerNick=nm;snick.value=nm;snickmsg.textContent='';try{localStorage.setItem('fpsArenaNick',nm);}catch(e){}return true;
 }
