@@ -3052,7 +3052,7 @@ document.getElementById('otitle').addEventListener('click',function(e){
   locked=false;keys={};firing=false;trig=false;zoomOn=false;jv.x=jv.y=0;
   tc.style.display='none';try{document.exitPointerLock();}catch(e2){}
   mobile=false;dev=null;devKind='pc';cbReset();document.body.classList.remove('mob');document.body.classList.remove('cbk');
-  overlay.classList.remove('hidden');
+  overlay.style.removeProperty('display');overlay.classList.remove('hidden');
 });
 
 // ===== 결과표 / 랭킹 =====
@@ -3309,12 +3309,15 @@ addEventListener('keyup',function(e){keys[e.code]=false;});
 var tc=document.getElementById('tc'),joyEl=document.getElementById('joy'),jk=document.getElementById('jk'),joyId=null,lookId=null,lx=0,ly=0,btnT={};
 function startPC(){dev='pc';mobile=false;document.body.classList.remove('mob');audio();renderer.domElement.requestPointerLock();}
 function startMobile(){
-  dev='mobile';mobile=true;document.body.classList.add('mob');document.body.classList.toggle('cbk',devKind==='chromebook');audio();locked=true;overlay.classList.add('hidden');tc.style.display='block';if(window.applyTouchLayout)window.applyTouchLayout();
+  dev='mobile';mobile=true;document.body.classList.add('mob');document.body.classList.toggle('cbk',devKind==='chromebook');audio();locked=true;
+  // 인앱 브라우저가 hidden 클래스를 덮어써도 시작 오버레이가 게임 위에 남지 않도록 직접 숨깁니다.
+  overlay.classList.add('hidden');overlay.style.setProperty('display','none','important');
+  tc.style.display='block';if(window.applyTouchLayout)window.applyTouchLayout();
   var de=document.documentElement,lk=function(){try{if(screen.orientation&&screen.orientation.lock)return screen.orientation.lock('landscape').catch(function(){});}catch(e){}};
   if(devKind!=='chromebook')try{var rf=de.requestFullscreen||de.webkitRequestFullscreen,pr=rf?rf.call(de):null;if(pr&&pr.then)pr.then(lk,lk);else lk();}catch(e){lk();} // 크롬북은 전체 화면·가로 고정을 요청하지 않아요
   setTimeout(fit,200);setTimeout(fit,700);
 }
-function pauseMobile(){if(shopOpen)closeShop();locked=false;keys={};firing=false;zoomOn=false;windOn=false;jv.x=jv.y=0;tc.style.display='none';overlay.classList.remove('hidden');}
+function pauseMobile(){if(shopOpen)closeShop();locked=false;keys={};firing=false;zoomOn=false;windOn=false;jv.x=jv.y=0;tc.style.display='none';overlay.style.removeProperty('display');overlay.classList.remove('hidden');}
 var fireHold=0;
 function tbtn(k,d){
   if(shopOpen&&d&&(k==='fire'||k==='zoom'||k==='jump'||k==='reload'||k==='det'||k==='slot'||k==='wpn'))return;
@@ -3372,14 +3375,12 @@ document.getElementById('cbback').addEventListener('click',function(e){e.stopPro
 cbqEl.addEventListener('click',function(e){e.stopPropagation();});
 overlay.addEventListener('click',function(){if(dev==='pc')startPC();});
 document.addEventListener('pointerlockchange',function(){
-  // 모바일 터치 조작은 Pointer Lock을 사용하지 않습니다.
-  // 터치 조작 레이어가 실제로 표시 중일 때만 시작 오버레이를 숨긴 상태로 유지합니다.
-  if(mobile && tc.style.display==='block'){
-    locked=true;
+  // 모바일 조작 모드에서는 Pointer Lock 이벤트가 시작 화면 표시를 바꾸지 않도록 합니다.
+  if(dev==='mobile'||mobile){
     overlay.classList.add('hidden');
+    overlay.style.setProperty('display','none','important');
     return;
   }
-  if(mobile)return;
   locked=document.pointerLockElement===renderer.domElement;
   if(locked)lockAt=performance.now();
   overlay.classList.toggle('hidden',locked);
