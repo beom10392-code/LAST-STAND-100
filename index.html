@@ -129,14 +129,6 @@ canvas{display:block;width:100%;height:100%}
 #tc [data-k=pause]{right:calc(14px + var(--sr));top:14px;width:52px;height:52px}
 #joy{position:absolute;left:calc(30px + var(--sl));bottom:calc(34px + var(--sb));width:140px;height:140px;border-radius:50%;background:rgba(20,17,15,.35);border:2px solid rgba(255,255,255,.3)}
 #jk{position:absolute;left:42px;top:42px;width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.45)}
-#joypad{position:absolute;inset:0;pointer-events:none}
-#joypad .jp{position:absolute;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.55);color:#fff;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;z-index:2}
-#joypad .jp:active{background:rgba(255,138,61,.85)}
-#joypad [data-k=moveup]{left:51px;top:3px}
-#joypad [data-k=movedown]{left:51px;bottom:3px}
-#joypad [data-k=moveleft]{left:3px;top:51px}
-#joypad [data-k=moveright]{right:3px;top:51px}
-
 #hb{position:fixed;left:50%;bottom:calc(66px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:8px;pointer-events:none;z-index:3}
 #hb .hs{min-width:136px;padding:6px 12px 7px;background:rgba(20,17,15,.62);border:2px solid rgba(255,255,255,.22);color:var(--muted);text-align:center;font-size:13px;line-height:1.4}
 #hb .hs.on{border-color:var(--accent);background:rgba(60,34,16,.82);color:var(--text)}
@@ -175,11 +167,6 @@ canvas{display:block;width:100%;height:100%}
 #tc [data-k=wpn]{right:calc(62px + var(--sr));top:8px;width:44px;height:44px}
 #tc [data-k=slot]{right:calc(114px + var(--sr));top:8px;width:44px;height:44px}
 #joy{left:calc(30px + var(--sl));bottom:calc(30px + var(--sb));width:120px;height:120px}#jk{left:34px;top:34px;width:52px;height:52px}
-#joypad [data-k=moveup]{left:43px;top:2px}
-#joypad [data-k=movedown]{left:43px;bottom:2px}
-#joypad [data-k=moveleft]{left:2px;top:43px}
-#joypad [data-k=moveright]{right:2px;top:43px}
-
 }
 
 /* ---- 시작 전에는 게임 HUD 숨김 ---- */
@@ -484,7 +471,7 @@ body.tsfx:not(.menu) canvas:not(#mmc){filter:grayscale(.85) contrast(1.06)}
 <div id="vh">E 키 / 뽑기 버튼 · 탄창 자판기 열기 (시간 정지)</div><div id="vp"><h3>탄창 자판기 · ⏸ 시간 정지</h3><div id="vc"></div><div id="vl"></div><div class="vr" id="vx"><span>닫기</span><span>E</span></div><p>숫자 키 1~7 또는 터치로 구매</p></div>
 <div id="ah">E 키 / 뽑기 버튼 · 강화 모루 열기 (시간 정지)</div><div id="ap"><h3>🔨 무기 강화 모루 · ⏸ 시간 정지</h3><div id="ac"></div><div id="al"></div><div class="vr" id="ax"><span>닫기</span><span>E</span></div><p>숫자 키 1~9 또는 터치로 강화 · 손에 든 무기와 가지고 있는 유틸리티만 강화돼요 · 강화할 때마다 비용 +500코인 · 무기 데미지는 기본의 5배까지 · 흡혈 확률·흡혈량은 최대 100%</p></div>
 <div id="gp"><h3>무기 뽑기 확률</h3><div id="gl"></div><p>E 키 / 뽑기 버튼 (100코인)</p></div>
-<div id="tc"><div id="joy"><i id="jk"></i><div id="joypad"><div class="jp" data-k="moveup">▲</div><div class="jp" data-k="moveleft">◀</div><div class="jp" data-k="moveright">▶</div><div class="jp" data-k="movedown">▼</div></div></div><div class="b" data-k="fire">발사</div><div class="b" data-k="zoom">줌</div><div class="b" data-k="jump">점프</div><div class="b" data-k="reload">재장전</div><div class="b" data-k="gacha">뽑기</div><div class="b" data-k="run">달리기</div><div class="b" data-k="slot">유틸</div><div class="b" data-k="wpn">무기</div><div class="b" data-k="det" id="det" style="display:none">기폭</div><div class="b" data-k="map">지도</div><div class="b" data-k="pause">II</div></div>
+<div id="tc"><div id="joy"><i id="jk"></i></div><div class="b" data-k="fire">발사</div><div class="b" data-k="zoom">줌</div><div class="b" data-k="jump">점프</div><div class="b" data-k="reload">재장전</div><div class="b" data-k="gacha">뽑기</div><div class="b" data-k="run">달리기</div><div class="b" data-k="slot">유틸</div><div class="b" data-k="wpn">무기</div><div class="b" data-k="det" id="det" style="display:none">기폭</div><div class="b" data-k="map">지도</div><div class="b" data-k="pause">II</div></div>
 <div id="gcp"></div><div id="rot">📱 화면을 가로로 돌려주세요<br><small>가로 모드에서 플레이할 수 있어요<br>(안 돌아가면 화면 자동 회전을 켜 주세요)</small></div><div id="overlay"><div id="card">
 <div id="chead"><h1>LAST STAND: 100</h1></div>
 <div id="cmain" class="nt">
@@ -3354,10 +3341,6 @@ function tbtn(k,d){
     else setTimeout(function(){firing=false;},Math.max(0,fireHold-performance.now()));
   }
   else if(k==='zoom'){if(cur==='flame'&&slot===1){if(d)startFlameWind();else{windOn=false;windHeld=false;}zoomOn=false;}else if(d)zoomOn=!zoomOn;}
-  else if(k==='moveup')keys.M_fwd=d;
-  else if(k==='movedown')keys.M_back=d;
-  else if(k==='moveleft')keys.M_left=d;
-  else if(k==='moveright')keys.M_right=d;
   else if(k==='jump')keys.M_jump=d;
   else if(k==='reload')keys.M_reload=d;
   else if(k==='gacha'){if(d){if(shopOpen)closeShop();else tryGacha();}}
@@ -3496,8 +3479,8 @@ function tick(){
   requestAnimationFrame(tick);
   var rdt=clock.getDelta(),dt=Math.min(rdt,.05);adaptRes(rdt);drawMM(rdt);if(shopOpen||cmdOpen)dt=0;if(locked&&overlayShown()){overlay.classList.add('hidden');overlay.style.setProperty('display','none','important');syncMenu();}if(locked&&!over)windCooldown=Math.max(0,windCooldown-dt);admTick(rdt);
   if(locked){
-    var f=Math.max(-1,Math.min(1,(kd('fwd')?1:0)-(kd('back')?1:0)+(keys.M_fwd?1:0)-(keys.M_back?1:0)-jv.y));
-    var s=Math.max(-1,Math.min(1,(kd('right')?1:0)-(kd('left')?1:0)+(keys.M_right?1:0)-(keys.M_left?1:0)+jv.x));
+    var f=Math.max(-1,Math.min(1,(kd('fwd')?1:0)-(kd('back')?1:0)-jv.y));
+    var s=Math.max(-1,Math.min(1,(kd('right')?1:0)-(kd('left')?1:0)+jv.x));
     var moving=f!==0||s!==0,runNow=false;
     if(moving){
       var len=Math.hypot(f,s);f/=len;s/=len;
