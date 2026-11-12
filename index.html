@@ -3372,7 +3372,14 @@ document.getElementById('cbback').addEventListener('click',function(e){e.stopPro
 cbqEl.addEventListener('click',function(e){e.stopPropagation();});
 overlay.addEventListener('click',function(){if(dev==='pc')startPC();});
 document.addEventListener('pointerlockchange',function(){
-  locked=document.pointerLockElement===renderer.domElement;if(locked)lockAt=performance.now();
+  // 모바일 및 마우스 없는 크롬북은 Pointer Lock을 사용하지 않습니다.
+  // 인앱 브라우저에서 이벤트가 발생해도 시작 화면을 다시 표시하지 않습니다.
+  if(mobile){
+    overlay.classList.add('hidden');
+    return;
+  }
+  locked=document.pointerLockElement===renderer.domElement;
+  if(locked)lockAt=performance.now();
   overlay.classList.toggle('hidden',locked);
   if(!locked){keys={};firing=false;zoomOn=false;windOn=false;if(shopOpen)closeShop();}
 });
