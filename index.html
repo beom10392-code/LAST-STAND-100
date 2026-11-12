@@ -54,7 +54,7 @@
 html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font-family:"Noto Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;color:var(--text)}
 canvas{display:block;width:100%;height:100%}
 #overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--panel);cursor:pointer;padding:24px;text-align:center}
-#overlay.hidden{display:none}
+#overlay.hidden{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 #card{max-width:420px}
 #card h1{font-size:32px;margin:0 0 8px;letter-spacing:-.02em}
 #card p{margin:0 0 20px;color:var(--muted);line-height:1.6}
@@ -137,7 +137,7 @@ canvas{display:block;width:100%;height:100%}
 #hb .hs small{display:block;font-size:12px;opacity:.85}
 #pw{position:fixed;left:50%;top:calc(50% + 34px);transform:translateX(-50%);width:130px;height:8px;border:2px solid rgba(255,255,255,.6);background:rgba(0,0,0,.45);display:none;pointer-events:none;z-index:3}
 #pw i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd24a,#ff5a2a)}
-#overlay{overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:12}
+#overlay{overflow-y:auto;z-index:12}
 #card{margin:auto}
 @supports (height:100dvh){html,body{height:100dvh}}
 #rot{display:none;position:fixed;inset:0;z-index:60;background:#14110f;color:var(--text);align-items:center;justify-content:center;flex-direction:column;gap:10px;font-size:22px;font-weight:700;text-align:center;padding:24px;line-height:1.5}
@@ -3302,10 +3302,22 @@ var P={x:0,y:0,cy:0,z:30,vy:0,yaw:0,pitch:0,onGround:true,kx:0,kz:0},R=.4,EYE=1.
 var lockAt=0,keys={},locked=false,bob=0,mobile=false,dev=null,devKind='pc',jv={x:0,y:0};
 function kd(a){var c=SET.kb[a];return !!(keys[c]||(c==='ShiftLeft'&&keys.ShiftRight)||(c==='ShiftRight'&&keys.ShiftLeft)||keys['M_'+a]);}
 var overlay=document.getElementById('overlay'),posEl=document.getElementById('pos');
-function overlayShown(){return !overlay.classList.contains('hidden')&&overlay.style.display!=='none';}
+function ovFlagHidden(){return overlay.classList.contains('hidden')||overlay.style.display==='none';}
+function ovApplyHide(){ // 숨김 상태면 클래스·display 말고도 visibility/opacity/pointer-events 로 한 번 더 확실히 숨겨요 (카카오톡 등 인앱 브라우저 대응)
+  var st=overlay.style,h=ovFlagHidden();
+  if(h){
+    if(st.getPropertyValue('visibility')!=='hidden'){st.setProperty('visibility','hidden','important');st.setProperty('opacity','0','important');st.setProperty('pointer-events','none','important');overlay.setAttribute('aria-hidden','true');void overlay.offsetHeight;}
+  }else if(st.getPropertyValue('visibility')==='hidden'){
+    st.removeProperty('visibility');st.removeProperty('opacity');st.removeProperty('pointer-events');overlay.removeAttribute('aria-hidden');void overlay.offsetHeight;
+  }
+}
+function overlayShown(){ // 클래스 값이 아니라 실제로 화면에 보이는지로 판단해요
+  ovApplyHide();
+  try{var cs=getComputedStyle(overlay);return cs.display!=='none'&&cs.visibility!=='hidden'&&cs.opacity!=='0';}catch(e){return !ovFlagHidden();}
+}
 function syncMenu(){var vis=overlayShown();if(document.body.classList.contains('menu')!==vis)document.body.classList.toggle('menu',vis);}
 try{new MutationObserver(syncMenu).observe(overlay,{attributes:true,attributeFilter:['class','style']});}catch(e){}
-setInterval(syncMenu,250);addEventListener('pageshow',syncMenu);addEventListener('resize',syncMenu);addEventListener('orientationchange',syncMenu);syncMenu(); // 앱 안 브라우저에서 이벤트가 빠져도 화면 상태가 맞도록 주기적으로도 확인해요
+setInterval(syncMenu,100);addEventListener('pageshow',syncMenu);addEventListener('resize',syncMenu);addEventListener('orientationchange',syncMenu);addEventListener('touchend',function(){setTimeout(syncMenu,0);setTimeout(syncMenu,120);},true);document.addEventListener('visibilitychange',syncMenu);syncMenu(); // 앱 안 브라우저에서 이벤트가 빠져도 화면 상태가 맞도록 주기적으로도 확인해요
 
 addEventListener('keydown',function(e){keys[e.code]=true;if(locked&&(e.code===SET.kb.jump||e.code==='Tab'||/^Arrow/.test(e.code)))e.preventDefault();});
 addEventListener('keyup',function(e){keys[e.code]=false;});
