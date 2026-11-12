@@ -290,6 +290,9 @@ body.menu #hb,body.menu #zinfo,body.menu #hp,body.menu #ammo,body.menu #coin,bod
 @media (max-height:520px){#ap{padding:10px 18px 8px;font-size:14px}#ap h3{font-size:17px;margin:0 0 4px}#ap #ac{font-size:16px}#ap .vr{padding:6px 8px}#ap .ah2{margin:6px 0 0;font-size:13px}}
 #fin{position:fixed;left:50%;top:calc(128px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:none;background:var(--panel);border-left:4px solid #ff3b30;padding:8px 18px;text-align:center;z-index:4;font-weight:700;pointer-events:none;font-size:16px;white-space:nowrap}
 #fin b{font-size:26px;color:#ff6b5a;font-variant-numeric:tabular-nums}
+/* 최종보스 소환 알림은 생존 타이머 바로 아래에 표시 */
+#toast.final-summon-toast{top:calc(190px + env(safe-area-inset-top,0px));white-space:normal;width:max-content;max-width:90vw;line-height:1.4}
+@media (max-height:520px){#toast.final-summon-toast{top:calc(132px + env(safe-area-inset-top,0px))}}
 body.menu #fin{display:none!important}
 @media (max-height:520px){#fin{top:calc(84px + env(safe-area-inset-top,0px));padding:4px 12px;font-size:12px}#fin b{font-size:18px}}
 #gcp{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,94vw);background:var(--panel);border:2px solid #ffd45e;padding:18px 24px;font-size:16px;display:none;z-index:7;box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
@@ -1148,7 +1151,7 @@ function renderEnemyPics(){ // 적 종류 탭의 사진: 게임 속 실제 3D �
   var PW=192,PH=240,zl0=zmeshes.length,rt=null;
   var mk={normal:function(){return mkZombie(nid());},asn:mkAsn,tank:mkTank,
     bomb:function(){var z=mkZombie(nid());z.mats[0].color.setHex(0xff6a4a);z.mats[1].color.setHex(0xb02012);return z;},
-    rng:mkRng,sum:mkSum,sumd:function(){return mkSumd('b');},sumdf:function(){return mkSumd('f');},stl:mkStl,boss:mkBossZ,demon:function(){var z=mkBossZ();var wingMat=new THREE.MeshStandardMaterial({color:0x68152a,roughness:.72,side:THREE.DoubleSide});var coreMat=new THREE.MeshStandardMaterial({color:0xff5a18,emissive:0xff3000,emissiveIntensity:2.2,roughness:.3});[-1,1].forEach(function(side){var sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(side*.78,.42);sh.lineTo(side*.62,-.48);sh.lineTo(side*.28,-.2);sh.closePath();var wm=new THREE.Mesh(new THREE.ShapeGeometry(sh),wingMat);wm.position.set(side*.32,.45,-.2);wm.rotation.y=side*.18;z.g.add(wm);});var core=new THREE.Mesh(new THREE.SphereGeometry(.19,16,12),coreMat);core.position.set(0,.58,.28);z.g.add(core);return z;}};
+    rng:mkRng,sum:mkSum,sumd:function(){return mkSumd('b');},sumdf:function(){return mkSumd('f');},stl:mkStl,boss:mkBossZ,demon:function(){var z=mkBossZ();bossLook(z,24,true);return z;}};
   try{
     rt=new THREE.WebGLRenderTarget(PW,PH,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat});
     var ts=new THREE.Scene();ts.background=new THREE.Color(0x1b1512);
@@ -1162,6 +1165,8 @@ function renderEnemyPics(){ // 적 종류 탭의 사진: 게임 속 실제 3D �
         z.g.visible=true;z.g.position.set(0,0,0);z.g.rotation.y=-.55;ts.add(z.g);
         var bb=new THREE.Box3().setFromObject(z.g),ctr=bb.getCenter(new THREE.Vector3()),sz=bb.getSize(new THREE.Vector3());
         var tn=Math.tan(15*Math.PI/180),dist=Math.max(sz.y/(2*tn),Math.max(sz.x,sz.z)/(2*tn*(PW/PH)))*1.22+sz.z*.5;
+        // 최종보스는 캔버스 크기를 유지한 채 카메라만 더 가까이 배치해 크게 보여줘요.
+        if(cv.dataset.k==='demon')dist*=.82;
         tc2.position.set(ctr.x,ctr.y+sz.y*.04,ctr.z+dist);tc2.lookAt(ctr);
         renderer.setRenderTarget(rt);renderer.render(ts,tc2);renderer.setRenderTarget(null);
         renderer.readRenderTargetPixels(rt,0,0,PW,PH,buf);
@@ -1179,7 +1184,7 @@ var WB={},ANV={};
 function initMags(){loaded={};mags={};ANV={};if(!WB.pistol){for(var k in WP)WB[k]={dmg:WP[k].dmg,steal:WP[k].steal,stealP:WP[k].stealP,range:WP[k].range,burnT:WP[k].burnT};}else{for(var k2 in WP){WP[k2].dmg=WB[k2].dmg;if(WB[k2].steal!==undefined){WP[k2].steal=WB[k2].steal;WP[k2].stealP=WB[k2].stealP;}if(WB[k2].range!==undefined){WP[k2].range=WB[k2].range;WP[k2].burnT=WB[k2].burnT;}}}}initMags();
 function updAmmo(){loaded[cur]=ammo;if(slot===2)return;ammoEl.innerHTML='<em>'+W.n+' · 예비 '+(cur==='flame'?'연료 ':'탄창 ')+dMag(cur)+'</em><b>'+ammo+'</b> / '+W.mag+(reloading?'<i>재장전 중</i>':(ammo===0?(mags[cur]>0?'<i>R 재장전</i>':'<i>탄약 없음 · 자판기에서 구매</i>'):''));}
 function updHP(){hpTxt.textContent='♥ '+(SET.adm?'∞':Math.round(hp));hpBar.style.width=(hp/2.5)+'%';}
-function toast(m,c){tEl.textContent=m;tEl.style.color=c;tEl.classList.toggle('wind-toast',/강풍|화염방사기/.test(m));tEl.classList.add('on');toastT=2.8;}
+function toast(m,c){tEl.textContent=m;tEl.style.color=c;tEl.classList.toggle('wind-toast',/강풍|화염방사기/.test(m));tEl.classList.toggle('final-summon-toast',/최종 보스가 강화된 좀비 21마리를 소환했습니다/.test(m));tEl.classList.add('on');toastT=2.8;}
 function equip(id){
   windOn=false;windHeld=false;windPend=0;windHot=0;zoomOn=false;updateAltButton(id);
   if(reloading&&mags[cur]!==undefined)mags[cur]++; // 재장전 중 무기가 바뀌면 이미 차감된 탄창을 돌려줌
